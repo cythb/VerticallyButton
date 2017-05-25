@@ -106,18 +106,7 @@ open class VerticallyButton: UIButton {
         titleLabel?.translatesAutoresizingMaskIntoConstraints = false
         
         if let imageView = self.imageView {
-            let imageSize = imageView.image?.size ?? CGSize(width: 0, height: 0)
             let imageConstraintCenterX = NSLayoutConstraint(item: imageView, attribute: .centerX, relatedBy: .equal, toItem: imageView.superview, attribute: .centerX, multiplier: 1.0, constant: 0)
-            let hConstraints = NSLayoutConstraint.constraints(withVisualFormat: "|->=3.5-[imageView(w)]->=3.5-|",
-                                           options: NSLayoutFormatOptions(),
-                                           metrics: ["w": imageSize.width],
-                                           views: ["imageView": imageView])
-            let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:|-6-[imageView(h)]",
-                                                              options: NSLayoutFormatOptions(),
-                                                              metrics: ["h": imageSize.height],
-                                                              views: ["imageView": imageView])
-//            imageView.superview?.addConstraints(hConstraints)
-//            imageView.superview?.addConstraints(vConstraints)
             imageView.superview?.addConstraint(imageConstraintCenterX)
         }
         
@@ -125,31 +114,7 @@ open class VerticallyButton: UIButton {
             titleLabel.textAlignment = .center
             let imageConstraintCenterX = NSLayoutConstraint(item: titleLabel, attribute: .centerX, relatedBy: .equal, toItem: titleLabel.superview, attribute: .centerX, multiplier: 1.0, constant: 0)
             titleLabel.superview?.addConstraint(imageConstraintCenterX)
-            
-//            let hConstraints = NSLayoutConstraint.constraints(withVisualFormat: "|-3.5-[titleLabel]-3.5-|",
-//                                                              options: NSLayoutFormatOptions(),
-//                                                              metrics: nil,
-//                                                              views: ["titleLabel": titleLabel])
-//            titleLabel.superview?.addConstraints(hConstraints)
-//
-//            if let imageView = self.imageView {
-//                let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:[imageView]-spacing-[titleLabel]-6-|",
-//                                                                  options: NSLayoutFormatOptions(),
-//                                                                  metrics: ["spacing": verticallySpacing],
-//                                                                  views: ["titleLabel": titleLabel,
-//                                                                          "imageView": imageView])
-//                titleLabel.superview?.addConstraints(vConstraints)
-//            } else {
-//                let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:|-6-[titleLabel]-6-|",
-//                                                                  options: NSLayoutFormatOptions(),
-//                                                                  metrics: ["spacing": verticallySpacing],
-//                                                                  views: ["titleLabel": titleLabel])
-//                titleLabel.superview?.addConstraints(vConstraints)
-//            }
         }
-//
-//        let cs = self.imageView?.superview?.constraints
-//        print(cs!)
         super.updateConstraints()
     }
 }
