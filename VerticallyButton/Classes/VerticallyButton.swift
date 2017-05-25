@@ -10,40 +10,25 @@ import UIKit
 
 @IBDesignable
 open class VerticallyButton: UIButton {
-    @IBInspectable
-    open var verticallyAlign: Bool = false {
-        didSet {
-            setNeedsDisplay()
-        }
+    open override func prepareForInterfaceBuilder() {
+        super.prepareForInterfaceBuilder()
+        self.setNeedsUpdateConstraints()
     }
     
     @IBInspectable
-    open var verticallySpacing: CGFloat = 0 {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
+    open var verticallyAlign: Bool = false
     
     @IBInspectable
-    open var verticallyPoint: CGPoint = CGPoint(x: 0, y: 0) {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
+    open var verticallySpacing: CGFloat = 0
     
     @IBInspectable
-    open var secondaryImage: UIImage? {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
+    open var verticallyPoint: CGPoint = CGPoint(x: 0, y: 0)
     
     @IBInspectable
-    open var secondaryHighlightedImage: UIImage? {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
+    open var secondaryImage: UIImage?
+    
+    @IBInspectable
+    open var secondaryHighlightedImage: UIImage?
     
     private func configureVertically() {
         guard verticallyAlign else { return }
@@ -64,10 +49,14 @@ open class VerticallyButton: UIButton {
             
             let titleSize = titleLabel?.frame.size ?? CGSize(width: 0, height: 0)
             
+            var offsetX = (intrinsicContentSize.width - imageSize.width)/2
+            if offsetX > 3.5 {
+                offsetX -= 3.5
+            }
             imageEdgeInsets = UIEdgeInsets(top: -(titleSize.height + verticallySpacing) - verticallyPoint.y,
-                                           left: 0 - verticallyPoint.x,
+                                           left: offsetX - verticallyPoint.x,
                                            bottom: 0 + verticallyPoint.y,
-                                           right: -titleSize.width + verticallyPoint.x)
+                                           right: -offsetX + verticallyPoint.x)
             
             titleEdgeInsets = UIEdgeInsets(top: 0 - verticallyPoint.y,
                                            left: -imageSize.width - verticallyPoint.x,
@@ -77,22 +66,90 @@ open class VerticallyButton: UIButton {
     }
     
     override open func draw(_ rect: CGRect) {
-        invalidateIntrinsicContentSize()
         configureVertically()
+        invalidateIntrinsicContentSize()
         super.draw(rect)
     }
     
-    override open func layoutSubviews() {
-        super.layoutSubviews()
-        setNeedsDisplay()
-    }
-    
     override open var intrinsicContentSize: CGSize {
-        let imageSize = imageView?.frame.size ?? CGSize(width: 0, height: 0)
+        // remove constrains of lable with image
+        var removeContraints = [NSLayoutConstraint]()
+        if let cs = self.imageView?.superview?.constraints {
+            for c in cs {
+                if (c.firstItem as? NSObject == self.imageView || c.secondItem as? NSObject == self.imageView) && (c.firstAttribute == .left || c.firstAttribute == .right) {
+                    removeContraints.append(c)
+                }
+            }
+        }
+        self.imageView?.superview?.removeConstraints(removeContraints)
+        
+        let originSize = super.intrinsicContentSize
+        let imageSize = imageView?.image?.size ?? CGSize(width: 0, height: 0)
         // Fix: title not display normally in XIB
         titleLabel?.sizeToFit()
         let titleSize = titleLabel?.frame.size ?? CGSize(width: 0, height: 0)
-        return CGSize(width: max(imageSize.width, titleSize.width),
+        let size = CGSize(width: max(imageSize.width, titleSize.width) + 7,
                       height: imageSize.height + titleSize.height + verticallySpacing + 12) // 12 = top margin + bottom margin
+        
+        if originSize.width >= size.width && originSize.height >= size.height {
+            return originSize
+        } else {
+            return size
+        }
+    }
+
+    open override func updateConstraints() {
+        guard verticallyAlign else { return super.updateConstraints()}
+        guard (secondaryImage == nil) else { return super.updateConstraints()}
+        
+        imageView?.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel?.translatesAutoresizingMaskIntoConstraints = false
+        
+        if let imageView = self.imageView {
+            let imageSize = imageView.image?.size ?? CGSize(width: 0, height: 0)
+            let imageConstraintCenterX = NSLayoutConstraint(item: imageView, attribute: .centerX, relatedBy: .equal, toItem: imageView.superview, attribute: .centerX, multiplier: 1.0, constant: 0)
+            let hConstraints = NSLayoutConstraint.constraints(withVisualFormat: "|->=3.5-[imageView(w)]->=3.5-|",
+                                           options: NSLayoutFormatOptions(),
+                                           metrics: ["w": imageSize.width],
+                                           views: ["imageView": imageView])
+            let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:|-6-[imageView(h)]",
+                                                              options: NSLayoutFormatOptions(),
+                                                              metrics: ["h": imageSize.height],
+                                                              views: ["imageView": imageView])
+//            imageView.superview?.addConstraints(hConstraints)
+//            imageView.superview?.addConstraints(vConstraints)
+            imageView.superview?.addConstraint(imageConstraintCenterX)
+        }
+        
+        if let titleLabel = self.titleLabel {
+            titleLabel.textAlignment = .center
+            let imageConstraintCenterX = NSLayoutConstraint(item: titleLabel, attribute: .centerX, relatedBy: .equal, toItem: titleLabel.superview, attribute: .centerX, multiplier: 1.0, constant: 0)
+            titleLabel.superview?.addConstraint(imageConstraintCenterX)
+            
+//            let hConstraints = NSLayoutConstraint.constraints(withVisualFormat: "|-3.5-[titleLabel]-3.5-|",
+//                                                              options: NSLayoutFormatOptions(),
+//                                                              metrics: nil,
+//                                                              views: ["titleLabel": titleLabel])
+//            titleLabel.superview?.addConstraints(hConstraints)
+//
+//            if let imageView = self.imageView {
+//                let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:[imageView]-spacing-[titleLabel]-6-|",
+//                                                                  options: NSLayoutFormatOptions(),
+//                                                                  metrics: ["spacing": verticallySpacing],
+//                                                                  views: ["titleLabel": titleLabel,
+//                                                                          "imageView": imageView])
+//                titleLabel.superview?.addConstraints(vConstraints)
+//            } else {
+//                let vConstraints = NSLayoutConstraint.constraints(withVisualFormat: "V:|-6-[titleLabel]-6-|",
+//                                                                  options: NSLayoutFormatOptions(),
+//                                                                  metrics: ["spacing": verticallySpacing],
+//                                                                  views: ["titleLabel": titleLabel])
+//                titleLabel.superview?.addConstraints(vConstraints)
+//            }
+        }
+//
+//        let cs = self.imageView?.superview?.constraints
+//        print(cs!)
+        super.updateConstraints()
     }
 }
